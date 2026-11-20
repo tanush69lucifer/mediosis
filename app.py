@@ -14,7 +14,7 @@ from mediosis import rx_ner, xr_vision
 from mediosis.rx_correct import DrugCorrector
 from mediosis.rx_ocr import read_prescription
 from mediosis.rx_pipeline import decode_lines, explain
-from mediosis.xr_check import cross_check
+from mediosis.xr_check import cross_check, final_verdict
 from mediosis.xr_report import Asserter
 
 ART = "artifacts"
@@ -62,7 +62,7 @@ def run_rx(image, typed, handwriting, lang):
 # ---------------- XCheck ----------------
 def run_xr(image, report):
     if image is None:
-        return "Upload a chest X-ray (frontal PA/AP view).", None, None
+        return "Upload a chest X-ray (frontal PA/AP view).", None, None, ""
     x, disp = xr_vision.preprocess(image)
     probs = xr_vision.predict(x)
     rows, _ = cross_check(probs, report, ASSERT)
@@ -78,7 +78,7 @@ def run_xr(image, report):
                f"Image model: TorchXRayVision DenseNet-121 · 0.5 = calibrated operating point · "
                f"uncertainty from 8× test-time augmentation.\n\n"
                + ("" if report and report.strip() else "_No report given — showing image findings only._"))
-    return summary, df, gallery
+    return summary, df, gallery, final_verdict(rows, bool(report and report.strip()))
 
 
 DEMO_REPORT = ("Heart size is normal. No pleural effusion or pneumothorax. "
@@ -118,10 +118,11 @@ with gr.Blocks(title="Mediosis", theme=gr.themes.Soft()) as demo:
                 xr_md = gr.Markdown()
                 xr_gal = gr.Gallery(label="Grad-CAM — where the model looked", columns=2, height=420)
         xr_df = gr.Dataframe(label="Finding-by-finding cross-check", wrap=True)
-        xr_btn.click(run_xr, [xr_img, xr_rep], [xr_md, xr_df, xr_gal])
+        xr_final = gr.Markdown()
+        xr_btn.click(run_xr, [xr_img, xr_rep], [xr_md, xr_df, xr_gal, xr_final])
 
     with gr.Tab("📊 Model card"):
-        gr.Markdown(open("results/metrics.md").read() if os.path.exists("results/metrics.md") else "Run train.py")
+        gr.Markdown(open("results/metrics.md", encoding="utf-8").read() if os.path.exists("results/metrics.md") else "Run train.py")
 
 if __name__ == "__main__":
     demo.launch(share="--share" in sys.argv, debug="--debug" in sys.argv)

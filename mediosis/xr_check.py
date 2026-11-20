@@ -32,9 +32,44 @@ def cross_check(probs, report_text, asserter):
             flag, sev = f"🟡 image {img} — radiologist judgement prevails", 1
         elif r_status == "uncertain" and img == "positive":
             flag, sev = "🟡 report uncertain, image leans positive — consider follow-up", 1
-        elif img == "negative" and r_status == "not mentioned":
-            continue  # nothing to say
+        elif r_status == "not mentioned" and img in ("negative", "borderline", "unstable"):
+            continue  # nothing reported and nothing confident in the image -> nothing to say
         rows.append(dict(pathology=lab, image_prob=round(p, 3), tta_std=round(sd, 3), image=img,
                          report=r_status, evidence=evidence, engine=engine, flag=flag, severity=sev))
     rows.sort(key=lambda r: (-r["severity"], -r["image_prob"]))
     return rows, rep
+
+
+def final_verdict(rows, has_report):
+    """Plain-language final result shown at the end of XCheck."""
+    pos = [r for r in rows if r["image"] == "positive"]
+    main = sorted([r for r in pos if r["pathology"] not in SOFT], key=lambda r: -r["image_prob"])
+    soft = sorted([r for r in pos if r["pathology"] in SOFT], key=lambda r: -r["image_prob"])
+    red = [r for r in rows if r["severity"] == 3]
+    orange = [r for r in rows if r["severity"] == 2]
+    name = lambda r: f"**{r['pathology'].replace('_', ' ')}** ({r['image_prob']:.2f})"
+
+    if not has_report:
+        head = ("## 🟠 FINAL RESULT: Abnormal findings — radiologist review recommended" if main
+                else "## ✅ FINAL RESULT: No confident abnormality detected")
+    elif red:
+        head = f"## 🔴 FINAL RESULT: Report contradicts the image ({len(red)}) — re-review needed"
+    elif orange:
+        head = f"## 🟠 FINAL RESULT: Report may be incomplete ({len(orange)} finding(s) to check)"
+    else:
+        head = "## ✅ FINAL RESULT: Report and image agree"
+
+    lines = [head, ""]
+    if main:
+        lines.append("**Main image findings:** " + ", ".join(name(r) for r in main))
+    if soft:
+        lines.append("**Supporting signs:** " + ", ".join(name(r) for r in soft))
+    if red:
+        lines.append("**Contradictions:** " + ", ".join(f"{r['pathology']} (report: {r['report']})" for r in red))
+    if orange:
+        lines.append("**Check in report:** " + ", ".join(r["pathology"] for r in orange))
+    if not pos:
+        lines.append("All 18 conditions are below the model's confidence threshold.")
+    lines += ["", "_Scores: 0.5 = model's calibrated threshold. Screening aid only — "
+                  "final diagnosis must come from a radiologist._"]
+    return "\n\n".join(lines)
