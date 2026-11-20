@@ -1,0 +1,17 @@
+# torch, torchvision, tensorflow/keras, numpy, pandas, scikit-learn, matplotlib come preinstalled on Colab
+torch
+torchvision
+tensorflow>=2.16
+keras>=3
+torchxrayvision>=1.2
+gensim>=4.3.3
+pytorch-crf>=0.7.2
+rapidfuzz>=3
+seqeval>=1.2.2
+easyocr>=1.7
+transformers>=4.40   # only for the optional handwriting (TrOCR) mode
+gradio>=4.44
+pandas
+scikit-learn
+matplotlib
+pillow

@@ -1,0 +1,41 @@
+{
+  "corrector_synthetic_1-2_edits": {
+    "fuzzy": 0.9853932584269663,
+    "fasttext": 0.9617977528089887,
+    "ensemble": 0.9893258426966293
+  },
+  "corrector_synthetic_3_edits": {
+    "fuzzy": 0.9230337078651686,
+    "fasttext": 0.8050561797752809,
+    "ensemble": 0.9258426966292135
+  },
+  "corrector_real_style": {
+    "fuzzy": 1.0,
+    "fasttext": 1.0,
+    "ensemble": 1.0
+  },
+  "ner_f1_synthetic_heavy_noise": 1.0,
+  "ner_f1_real_style": 0.9385474860335196,
+  "assertion": {
+    "synthetic held-out templates": {
+      "NegEx rules": [
+        0.918,
+        0.9181724108971184
+      ],
+      "BiGRU+self-attn (+rule fallback)": [
+        1.0,
+        1.0
+      ]
+    },
+    "hand-written real-style (n=30)": {
+      "NegEx rules": [
+        0.9,
+        0.8933333333333332
+      ],
+      "BiGRU+self-attn (+rule fallback)": [
+        0.9,
+        0.8965079365079366
+      ]
+    }
+  }
+}
